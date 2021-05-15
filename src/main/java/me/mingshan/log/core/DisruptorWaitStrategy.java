@@ -8,8 +8,7 @@ package me.mingshan.log.core;
 public enum DisruptorWaitStrategy {
 
   /**
-   * Like the BlockingWaitStrategy the SleepingWaitStrategy it attempts to be conservative with CPU usage, by using a simple busy wait loop,
-   * but uses a call to LockSupport.parkNanos(1) in the middle of the loop.
+   * 対生产者影响最小，适合异步日志场景,LockSupport.parkNanos
    */
   SLEEP("SleepingWaitStrategy"),
 
@@ -19,7 +18,7 @@ public enum DisruptorWaitStrategy {
   YIELD("YieldingWaitStrategy"),
 
   /**
-   * 使用{@code Lock}和 {@code Condition}。CPU资源的占用少，延迟大
+   * 使用{@code Lock}和 {@code Condition}。CPU资源的占用少，延迟大，相对来说比较低效
    */
   BLOCK("BlockingWaitStrategy"),
 

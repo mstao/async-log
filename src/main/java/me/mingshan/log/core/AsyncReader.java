@@ -17,6 +17,8 @@ import com.lmax.disruptor.EventTranslatorOneArg;
 import me.mingshan.log.api.Message;
 import me.mingshan.log.api.Reader;
 
+import static me.mingshan.log.core.EventRoute.ENQUEUE;
+
 /**
  * The implementation of logger.
  *
@@ -37,11 +39,10 @@ public class AsyncReader<E extends Message> implements Reader<E>, EventTranslato
   private void logWithOneArgTranslator(E message) {
     // 使用{@link RingBuffer#tryPublishEvent} 会先尝试放入event，当RingBuffer会返回false，
     // 放入失败，此时需要进行处理
-//        if (!this.loggerDisruptor.getDisruptor().getRingBuffer()
-//                .tryPublishEvent(this, message)) {
-//            handleRingBufferFull(message);
-//        }
-    this.loggerDisruptor.getDisruptor().getRingBuffer().publishEvent(this, message);
+    if (!this.loggerDisruptor.getDisruptor().getRingBuffer()
+            .tryPublishEvent(this, message)) {
+        handleRingBufferFull(message);
+    }
   }
 
   /**
@@ -50,8 +51,21 @@ public class AsyncReader<E extends Message> implements Reader<E>, EventTranslato
    * @param message the message
    */
   private void handleRingBufferFull(E message) {
-    // TODO
-    System.out.println("队列满了--- " + message);
+    if (message == null) {
+      return;
+    }
+
+    final EventRoute eventRoute = LogDisruptor.getEventRoute(message.getLevel());
+    switch (eventRoute) {
+      case ENQUEUE:
+        this.loggerDisruptor.getDisruptor().getRingBuffer()
+            .publishEvent(this, message);
+        break;
+      case DISCARD:
+        break;
+      default:
+        throw new IllegalStateException("Unknown EventRoute " + eventRoute);
+    }
   }
 
   @Override
